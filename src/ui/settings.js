@@ -3,7 +3,12 @@ import { saveSettings, loadSettings, clearSettings } from '../utils/storage.js';
 import { initDetector, isDetectorSupported } from '../detector.js';
 
 const VALID_MODES = ['simpleDim', 'darkInvert'];
-const DEFAULTS = { intensity: 50, mode: 'simpleDim', autoDetect: false, detectThreshold: 50 };
+const DEFAULTS = { intensity: 50, mode: 'simpleDim', autoDetect: false };
+
+/** Map Darkness slider (0–100%) to luminance threshold (200–10). */
+function darknessToThreshold(intensity) {
+  return 10 + (100 - intensity) * 1.9;
+}
 
 const MODE_HINTS = {
   simpleDim: 'Uniform darkening — good for general viewing.',
@@ -44,11 +49,7 @@ export function initSettings(container) {
             <span class="toggle-track"></span>
           </label>
         </div>
-        <p class="mode-hint">Adjusts filter to hold brightness near target. Requires screen sharing permission.</p>
-        <div class="threshold-slider-wrap" id="threshold-slider-wrap" style="display:${settings.autoDetect ? 'block' : 'none'}">
-          <label for="detect-threshold">Target: <span id="threshold-value">${settings.detectThreshold}</span></label>
-          <input type="range" id="detect-threshold" min="10" max="200" step="5" value="${settings.detectThreshold}">
-        </div>
+        <p class="mode-hint">Adjusts filter to hold brightness near target. Use the Darkness slider to set the target level. Requires screen sharing permission.</p>
       </div>
       ` : ''}
 
@@ -63,9 +64,6 @@ export function initSettings(container) {
   const modeHint = container.querySelector('#mode-hint');
   const autoDetectToggle = container.querySelector('#auto-detect-toggle');
   const autoDetectStatus = container.querySelector('#auto-detect-status');
-  const thresholdSlider = container.querySelector('#detect-threshold');
-  const thresholdValue = container.querySelector('#threshold-value');
-  const thresholdWrap = container.querySelector('#threshold-slider-wrap');
   const resetBtn = container.querySelector('.settings-reset');
 
   // Auto-detect state
@@ -74,7 +72,7 @@ export function initSettings(container) {
 
   if (isDetectorSupported()) {
     detector = initDetector({
-      threshold: settings.detectThreshold,
+      threshold: darknessToThreshold(settings.intensity),
       onFilterRecommend(rec) {
         if (rec) {
           // Save original settings before first auto-adjustment
@@ -166,10 +164,14 @@ export function initSettings(container) {
 
   // Slider input
   function onSliderInput() {
-    disableAutoDetect();
     settings.intensity = Number(slider.value);
     valueLabel.textContent = settings.intensity + '%';
-    emitChange();
+    if (settings.autoDetect && detector) {
+      detector.setThreshold(darknessToThreshold(settings.intensity));
+      saveSettings(settings);
+    } else {
+      emitChange();
+    }
   }
 
   // Mode button click
@@ -187,21 +189,8 @@ export function initSettings(container) {
   function onAutoDetectChange() {
     settings.autoDetect = autoDetectToggle.checked;
     saveSettings(settings);
-    if (thresholdWrap) thresholdWrap.style.display = settings.autoDetect ? 'block' : 'none';
     if (settings.autoDetect && detector) {
-      // Preemptively apply Simple Dim at 50% while waiting for screen
-      // sharing approval. The controller's first recommendation (~33ms
-      // after capture starts) takes over with the precise filter.
-      if (!savedBeforeDetect) {
-        savedBeforeDetect = { mode: settings.mode, intensity: settings.intensity };
-      }
-      settings.mode = 'simpleDim';
-      settings.intensity = 50;
-      updateSliderUI();
-      modeButtons.forEach(b => b.classList.toggle('active', b.dataset.mode === 'simpleDim'));
-      updateModeHint();
-      applyFilter(settings.mode, settings.intensity);
-      saveSettings(settings);
+      detector.setThreshold(darknessToThreshold(settings.intensity));
       detector.start();
     } else if (detector) {
       detector.stop();
@@ -218,13 +207,6 @@ export function initSettings(container) {
     }
   }
 
-  function onThresholdInput() {
-    settings.detectThreshold = Number(thresholdSlider.value);
-    thresholdValue.textContent = settings.detectThreshold;
-    if (detector) detector.setThreshold(settings.detectThreshold);
-    saveSettings(settings);
-  }
-
   // Reset
   function onReset() {
     disableAutoDetect();
@@ -234,12 +216,7 @@ export function initSettings(container) {
     modeButtons.forEach(b => b.classList.toggle('active', b.dataset.mode === settings.mode));
     updateModeHint();
     if (autoDetectToggle) autoDetectToggle.checked = false;
-    if (thresholdSlider) {
-      thresholdSlider.value = DEFAULTS.detectThreshold;
-      thresholdValue.textContent = DEFAULTS.detectThreshold;
-      if (detector) detector.setThreshold(DEFAULTS.detectThreshold);
-    }
-    if (thresholdWrap) thresholdWrap.style.display = 'none';
+    if (detector) detector.setThreshold(darknessToThreshold(DEFAULTS.intensity));
     setAutoDetectStatus('');
     emitChange();
   }
@@ -248,7 +225,6 @@ export function initSettings(container) {
   slider.addEventListener('input', onSliderInput);
   container.querySelector('.mode-selector').addEventListener('click', onModeClick);
   if (autoDetectToggle) autoDetectToggle.addEventListener('change', onAutoDetectChange);
-  if (thresholdSlider) thresholdSlider.addEventListener('input', onThresholdInput);
   resetBtn.addEventListener('click', onReset);
 
   // Initial state
@@ -275,7 +251,6 @@ export function initSettings(container) {
       slider.removeEventListener('input', onSliderInput);
       container.querySelector('.mode-selector').removeEventListener('click', onModeClick);
       if (autoDetectToggle) autoDetectToggle.removeEventListener('change', onAutoDetectChange);
-      if (thresholdSlider) thresholdSlider.removeEventListener('input', onThresholdInput);
       resetBtn.removeEventListener('click', onReset);
       if (detector) detector.destroy();
       container.innerHTML = '';

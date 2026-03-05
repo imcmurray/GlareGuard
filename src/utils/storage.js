@@ -2,7 +2,7 @@ const STORAGE_KEY = 'glareguard-settings';
 
 const VALID_MODES = ['simpleDim', 'darkInvert'];
 
-const DEFAULTS = { intensity: 50, mode: 'simpleDim', autoDetect: false, detectThreshold: 50 };
+const DEFAULTS = { intensity: 50, mode: 'simpleDim', autoDetect: false };
 
 /** Map old mode names to new ones for seamless migration. */
 const MIGRATION_MAP = {
@@ -46,9 +46,6 @@ export function loadSettings() {
       intensity: typeof parsed.intensity === 'number' ? parsed.intensity : DEFAULTS.intensity,
       mode: VALID_MODES.includes(mode) ? mode : DEFAULTS.mode,
       autoDetect: typeof parsed.autoDetect === 'boolean' ? parsed.autoDetect : DEFAULTS.autoDetect,
-      detectThreshold: typeof parsed.detectThreshold === 'number'
-        ? Math.max(10, Math.min(200, parsed.detectThreshold))
-        : DEFAULTS.detectThreshold,
     };
   } catch {
     return { ...DEFAULTS };
