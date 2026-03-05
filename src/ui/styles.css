@@ -222,6 +222,7 @@ main {
   justify-content: center;
   gap: 0.75rem;
   background: rgba(0, 0, 0, 0.6);
+  filter: var(--ui-filter, none);
   z-index: 20;
 }
 
