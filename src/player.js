@@ -6,6 +6,7 @@
 let player = null;
 let apiReady = false;
 let apiPromise = null;
+let currentVideoId = null;
 
 /**
  * Dynamically load the YouTube IFrame API script.
@@ -61,6 +62,8 @@ export function createPlayer(videoId, options = {}) {
       player = null;
     }
 
+    currentVideoId = videoId;
+
     player = new window.YT.Player('player', {
       width: '100%',
       height: '100%',
@@ -79,6 +82,18 @@ export function createPlayer(videoId, options = {}) {
         },
         onStateChange(event) {
           document.dispatchEvent(new CustomEvent('glareguard:statechange', { detail: { state: event.data } }));
+          // Detect when YouTube loads a different video (e.g. end-screen click)
+          if (event.data === window.YT.PlayerState.PLAYING) {
+            try {
+              const url = event.target.getVideoUrl();
+              const match = url && url.match(/[?&]v=([^&]+)/);
+              const newId = match && match[1];
+              if (newId && newId !== currentVideoId) {
+                currentVideoId = newId;
+                document.dispatchEvent(new CustomEvent('glareguard:videochange', { detail: { videoId: newId } }));
+              }
+            } catch {}
+          }
         },
         onError(event) {
           document.dispatchEvent(new CustomEvent('glareguard:playererror', { detail: { code: event.data } }));
@@ -96,6 +111,7 @@ export function destroyPlayer() {
     try { player.destroy(); } catch {}
     player = null;
   }
+  currentVideoId = null;
 }
 
 /**
@@ -105,6 +121,7 @@ export function destroyPlayer() {
  */
 export function loadVideo(videoId) {
   if (player && typeof player.loadVideoById === 'function') {
+    currentVideoId = videoId;
     player.loadVideoById(videoId);
     return Promise.resolve(player);
   }

@@ -212,6 +212,80 @@ main {
   transition: filter var(--transition), background-color var(--transition), mix-blend-mode var(--transition);
 }
 
+/* ===== End-Screen Overlay ===== */
+.end-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 20;
+}
+
+.end-screen-replay {
+  padding: 0.75rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background var(--transition), transform var(--transition);
+  min-height: 44px;
+}
+
+.end-screen-replay:hover {
+  background: var(--accent-hover);
+  transform: scale(1.05);
+}
+
+.end-screen-form {
+  display: flex;
+  gap: 0.5rem;
+  width: 80%;
+  max-width: 480px;
+}
+
+.end-screen-input {
+  flex: 1;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.95rem;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: var(--radius);
+  outline: none;
+}
+
+.end-screen-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.end-screen-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.3);
+}
+
+.end-screen-go {
+  padding: 0.6rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.end-screen-go:hover {
+  background: var(--accent-hover);
+}
+
 /* ===== Settings Panel ===== */
 .settings-container {
   width: 100%;
