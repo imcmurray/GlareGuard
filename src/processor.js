@@ -39,7 +39,7 @@ function resetAll(overlay, iframe) {
 
 /**
  * Compute style config for a given mode and intensity.
- * @param {'simpleDim'|'reduceGlare'|'darkInvert'|'nightWarm'} mode
+ * @param {'simpleDim'|'darkInvert'} mode
  * @param {number} intensity 0–100
  * @returns {{ overlay: { filter: string, backgroundColor: string, mixBlendMode: string }, iframe: { filter: string } }}
  */
@@ -60,27 +60,12 @@ export function getModeConfig(mode, intensity) {
       break;
     }
 
-    case 'reduceGlare': {
-      const alpha = (t / 100) * 0.6;
-      config.overlay.backgroundColor = `rgba(0, 0, 0, ${alpha})`;
-      config.overlay.mixBlendMode = 'multiply';
-      break;
-    }
-
     case 'darkInvert': {
       const amount = t / 100;
       config.iframe.filter = `invert(${amount}) hue-rotate(${180 * amount}deg)`;
       break;
     }
 
-    case 'nightWarm': {
-      const alpha = (t / 100) * 0.45;
-      const saturate = 1 - (t * 0.3) / 100;
-      config.overlay.backgroundColor = `rgba(255, 160, 50, ${alpha})`;
-      config.overlay.mixBlendMode = 'multiply';
-      config.overlay.filter = `saturate(${saturate})`;
-      break;
-    }
   }
 
   return config;
@@ -88,7 +73,7 @@ export function getModeConfig(mode, intensity) {
 
 /**
  * Apply a filter to the overlay and/or iframe.
- * @param {'simpleDim'|'reduceGlare'|'darkInvert'|'nightWarm'} mode
+ * @param {'simpleDim'|'darkInvert'} mode
  * @param {number} intensity 0–100
  */
 export function applyFilter(mode, intensity) {

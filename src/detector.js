@@ -5,9 +5,10 @@
  */
 
 const SAMPLE_SIZE = 8;
-const ATTACK_ALPHA = 0.3;        // EMA factor when luminance increases (fast reaction)
-const DECAY_ALPHA = 0.1;         // EMA factor when luminance decreases (slow release)
-const MODE_CHANGE_COOLDOWN = 5;  // ~165ms cooldown only on mode transitions
+const ATTACK_ALPHA = 0.15;       // EMA factor when luminance increases (smooth tracking)
+const DECAY_ALPHA = 0.05;        // EMA factor when luminance decreases (slow release)
+const MODE_CHANGE_COOLDOWN = 15; // ~500ms cooldown on mode transitions
+const MAX_INTENSITY_STEP = 3;    // Cap intensity change per recommendation cycle
 
 /**
  * Check if the Screen Capture API is available.
@@ -244,9 +245,16 @@ export function initDetector({ onFilterRecommend, onError, onStatusChange, thres
       (rec && lastRecommendation && rec.mode !== lastRecommendation.mode);
     const intensityChanged = rec && lastRecommendation &&
       rec.mode === lastRecommendation.mode &&
-      Math.abs(rec.intensity - lastRecommendation.intensity) > 2;
+      Math.abs(rec.intensity - lastRecommendation.intensity) > 5;
 
     if (modeChanged || intensityChanged) {
+      // Rate-limit intensity changes to prevent sudden jumps
+      if (rec && lastRecommendation && rec.mode === lastRecommendation.mode) {
+        const delta = rec.intensity - lastRecommendation.intensity;
+        if (Math.abs(delta) > MAX_INTENSITY_STEP) {
+          rec = { ...rec, intensity: lastRecommendation.intensity + Math.sign(delta) * MAX_INTENSITY_STEP };
+        }
+      }
       lastRecommendation = rec;
       if (modeChanged) cooldown = MODE_CHANGE_COOLDOWN;
       onFilterRecommend(rec);

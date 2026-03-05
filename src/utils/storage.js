@@ -1,14 +1,16 @@
 const STORAGE_KEY = 'glareguard-settings';
 
-const VALID_MODES = ['simpleDim', 'reduceGlare', 'darkInvert', 'nightWarm'];
+const VALID_MODES = ['simpleDim', 'darkInvert'];
 
-const DEFAULTS = { intensity: 50, mode: 'simpleDim', auto: false, autoDetect: false, detectThreshold: 50 };
+const DEFAULTS = { intensity: 50, mode: 'simpleDim', autoDetect: false, detectThreshold: 50 };
 
 /** Map old mode names to new ones for seamless migration. */
 const MIGRATION_MAP = {
   globalDim: 'simpleDim',
-  selectiveBright: 'reduceGlare',
-  nightTint: 'nightWarm',
+  selectiveBright: 'simpleDim',
+  nightTint: 'simpleDim',
+  reduceGlare: 'simpleDim',
+  nightWarm: 'simpleDim',
 };
 
 /**
@@ -43,7 +45,6 @@ export function loadSettings() {
     return {
       intensity: typeof parsed.intensity === 'number' ? parsed.intensity : DEFAULTS.intensity,
       mode: VALID_MODES.includes(mode) ? mode : DEFAULTS.mode,
-      auto: typeof parsed.auto === 'boolean' ? parsed.auto : DEFAULTS.auto,
       autoDetect: typeof parsed.autoDetect === 'boolean' ? parsed.autoDetect : DEFAULTS.autoDetect,
       detectThreshold: typeof parsed.detectThreshold === 'number'
         ? Math.max(10, Math.min(200, parsed.detectThreshold))

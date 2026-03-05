@@ -2,14 +2,12 @@ import { applyFilter } from '../processor.js';
 import { saveSettings, loadSettings, clearSettings } from '../utils/storage.js';
 import { initDetector, isDetectorSupported } from '../detector.js';
 
-const VALID_MODES = ['simpleDim', 'reduceGlare', 'darkInvert', 'nightWarm'];
-const DEFAULTS = { intensity: 50, mode: 'simpleDim', auto: false, autoDetect: false, detectThreshold: 50 };
+const VALID_MODES = ['simpleDim', 'darkInvert'];
+const DEFAULTS = { intensity: 50, mode: 'simpleDim', autoDetect: false, detectThreshold: 50 };
 
 const MODE_HINTS = {
   simpleDim: 'Uniform darkening — good for general viewing.',
-  reduceGlare: 'Bright areas darken more than dark areas.',
   darkInvert: 'Inverts colors — turns white backgrounds dark.',
-  nightWarm: 'Warm amber tint for comfortable night viewing.',
 };
 
 /**
@@ -24,7 +22,7 @@ export function initSettings(container) {
   container.innerHTML = `
     <div class="settings-panel">
       <div class="settings-group">
-        <label for="intensity-slider">Intensity: <span id="intensity-value">${settings.intensity}%</span></label>
+        <label for="intensity-slider">Darkness: <span id="intensity-value">${settings.intensity}%</span></label>
         <input type="range" id="intensity-slider" min="0" max="100" step="1" value="${settings.intensity}">
       </div>
 
@@ -32,21 +30,9 @@ export function initSettings(container) {
         <label>Filter Mode</label>
         <div class="mode-selector">
           <button type="button" class="mode-btn${settings.mode === 'simpleDim' ? ' active' : ''}" data-mode="simpleDim">Simple Dim</button>
-          <button type="button" class="mode-btn${settings.mode === 'reduceGlare' ? ' active' : ''}" data-mode="reduceGlare">Reduce Glare</button>
           <button type="button" class="mode-btn${settings.mode === 'darkInvert' ? ' active' : ''}" data-mode="darkInvert">Dark Invert</button>
-          <button type="button" class="mode-btn${settings.mode === 'nightWarm' ? ' active' : ''}" data-mode="nightWarm">Night Warm</button>
         </div>
         <p class="mode-hint" id="mode-hint">${MODE_HINTS[settings.mode]}</p>
-      </div>
-
-      <div class="settings-group">
-        <div class="toggle-wrap">
-          <label for="auto-toggle">Auto (match system theme)</label>
-          <label class="toggle">
-            <input type="checkbox" id="auto-toggle" ${settings.auto ? 'checked' : ''}>
-            <span class="toggle-track"></span>
-          </label>
-        </div>
       </div>
 
       ${isDetectorSupported() ? `
@@ -75,16 +61,12 @@ export function initSettings(container) {
   const valueLabel = container.querySelector('#intensity-value');
   const modeButtons = container.querySelectorAll('.mode-btn');
   const modeHint = container.querySelector('#mode-hint');
-  const autoToggle = container.querySelector('#auto-toggle');
   const autoDetectToggle = container.querySelector('#auto-detect-toggle');
   const autoDetectStatus = container.querySelector('#auto-detect-status');
   const thresholdSlider = container.querySelector('#detect-threshold');
   const thresholdValue = container.querySelector('#threshold-value');
   const thresholdWrap = container.querySelector('#threshold-slider-wrap');
   const resetBtn = container.querySelector('.settings-reset');
-
-  // Dark mode media query
-  const darkMQ = window.matchMedia('(prefers-color-scheme: dark)');
 
   // Auto-detect state
   let savedBeforeDetect = null; // { mode, intensity } saved when auto-detect activates
@@ -182,13 +164,6 @@ export function initSettings(container) {
     modeHint.textContent = MODE_HINTS[settings.mode] || '';
   }
 
-  function applyAutoIntensity() {
-    if (!settings.auto) return;
-    settings.intensity = darkMQ.matches ? 40 : 60;
-    updateSliderUI();
-    emitChange();
-  }
-
   // Slider input
   function onSliderInput() {
     disableAutoDetect();
@@ -206,22 +181,6 @@ export function initSettings(container) {
     modeButtons.forEach(b => b.classList.toggle('active', b === btn));
     updateModeHint();
     emitChange();
-  }
-
-  // Auto toggle
-  function onAutoChange() {
-    settings.auto = autoToggle.checked;
-    slider.disabled = settings.auto;
-    if (settings.auto) {
-      applyAutoIntensity();
-    } else {
-      emitChange();
-    }
-  }
-
-  // System theme change
-  function onSystemThemeChange() {
-    applyAutoIntensity();
   }
 
   // Auto-detect toggle
@@ -274,7 +233,6 @@ export function initSettings(container) {
     updateSliderUI();
     modeButtons.forEach(b => b.classList.toggle('active', b.dataset.mode === settings.mode));
     updateModeHint();
-    autoToggle.checked = settings.auto;
     if (autoDetectToggle) autoDetectToggle.checked = false;
     if (thresholdSlider) {
       thresholdSlider.value = DEFAULTS.detectThreshold;
@@ -283,23 +241,18 @@ export function initSettings(container) {
     }
     if (thresholdWrap) thresholdWrap.style.display = 'none';
     setAutoDetectStatus('');
-    slider.disabled = false;
     emitChange();
   }
 
   // Wire listeners
   slider.addEventListener('input', onSliderInput);
   container.querySelector('.mode-selector').addEventListener('click', onModeClick);
-  autoToggle.addEventListener('change', onAutoChange);
   if (autoDetectToggle) autoDetectToggle.addEventListener('change', onAutoDetectChange);
   if (thresholdSlider) thresholdSlider.addEventListener('input', onThresholdInput);
   resetBtn.addEventListener('click', onReset);
-  darkMQ.addEventListener('change', onSystemThemeChange);
 
   // Initial state
-  slider.disabled = settings.auto;
-  if (settings.auto) applyAutoIntensity();
-  else applyFilter(settings.mode, settings.intensity);
+  applyFilter(settings.mode, settings.intensity);
 
   // Public API
   return {
@@ -321,11 +274,9 @@ export function initSettings(container) {
     destroy() {
       slider.removeEventListener('input', onSliderInput);
       container.querySelector('.mode-selector').removeEventListener('click', onModeClick);
-      autoToggle.removeEventListener('change', onAutoChange);
       if (autoDetectToggle) autoDetectToggle.removeEventListener('change', onAutoDetectChange);
       if (thresholdSlider) thresholdSlider.removeEventListener('input', onThresholdInput);
       resetBtn.removeEventListener('click', onReset);
-      darkMQ.removeEventListener('change', onSystemThemeChange);
       if (detector) detector.destroy();
       container.innerHTML = '';
     },
