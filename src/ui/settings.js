@@ -1,5 +1,5 @@
 import { applyFilter } from '../processor.js';
-import { saveSettings, loadSettings, clearSettings } from '../utils/storage.js';
+import { saveSettings, loadSettings } from '../utils/storage.js';
 import { initDetector, isDetectorSupported } from '../detector.js';
 
 const VALID_MODES = ['simpleDim', 'darkInvert'];
@@ -52,8 +52,6 @@ export function initSettings(container) {
         <p class="mode-hint">Adjusts filter to hold brightness near target. Use the Darkness slider to set the target level. Requires screen sharing permission.</p>
       </div>
       ` : ''}
-
-      <button type="button" class="settings-reset">Reset to Defaults</button>
     </div>
   `;
 
@@ -64,7 +62,6 @@ export function initSettings(container) {
   const modeHint = container.querySelector('#mode-hint');
   const autoDetectToggle = container.querySelector('#auto-detect-toggle');
   const autoDetectStatus = container.querySelector('#auto-detect-status');
-  const resetBtn = container.querySelector('.settings-reset');
 
   // Auto-detect state
   let savedBeforeDetect = null; // { mode, intensity } saved when auto-detect activates
@@ -207,25 +204,10 @@ export function initSettings(container) {
     }
   }
 
-  // Reset
-  function onReset() {
-    disableAutoDetect();
-    clearSettings();
-    settings = { ...DEFAULTS };
-    updateSliderUI();
-    modeButtons.forEach(b => b.classList.toggle('active', b.dataset.mode === settings.mode));
-    updateModeHint();
-    if (autoDetectToggle) autoDetectToggle.checked = false;
-    if (detector) detector.setThreshold(darknessToThreshold(DEFAULTS.intensity));
-    setAutoDetectStatus('');
-    emitChange();
-  }
-
   // Wire listeners
   slider.addEventListener('input', onSliderInput);
   container.querySelector('.mode-selector').addEventListener('click', onModeClick);
   if (autoDetectToggle) autoDetectToggle.addEventListener('change', onAutoDetectChange);
-  resetBtn.addEventListener('click', onReset);
 
   // Initial state
   applyFilter(settings.mode, settings.intensity);
@@ -251,7 +233,6 @@ export function initSettings(container) {
       slider.removeEventListener('input', onSliderInput);
       container.querySelector('.mode-selector').removeEventListener('click', onModeClick);
       if (autoDetectToggle) autoDetectToggle.removeEventListener('change', onAutoDetectChange);
-      resetBtn.removeEventListener('click', onReset);
       if (detector) detector.destroy();
       container.innerHTML = '';
     },
