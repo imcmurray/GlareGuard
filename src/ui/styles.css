@@ -71,6 +71,15 @@ main {
   border: 0;
 }
 
+/* ===== UI Dimming (matches video filter) ===== */
+.site-header,
+.hero,
+.settings-container,
+.site-footer,
+.install-btn {
+  filter: var(--ui-filter, none);
+}
+
 /* ===== Header ===== */
 .site-header {
   text-align: center;
@@ -465,6 +474,20 @@ input[type="range"]:focus-visible {
   .hero {
     padding: 3rem 2rem;
   }
+}
+
+/* ===== Experimental Badge ===== */
+.experimental-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #ff9800;
+  background: rgba(255, 152, 0, 0.12);
+  border: 1px solid rgba(255, 152, 0, 0.3);
+  border-radius: 4px;
+  padding: 0.1em 0.4em;
+  vertical-align: middle;
 }
 
 /* ===== Auto-Detect Status ===== */

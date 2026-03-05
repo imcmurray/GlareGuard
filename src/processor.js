@@ -7,6 +7,27 @@ const OVERLAY_ID = 'filter-overlay';
 
 let currentMode = null;
 let currentIntensity = 0;
+let svgFiltersInjected = false;
+
+/** Inject inline SVG with feColorMatrix filters for precise night-vision tints. */
+function ensureSVGFilters() {
+  if (svgFiltersInjected) return;
+  svgFiltersInjected = true;
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.style.position = 'absolute';
+  svg.style.width = '0';
+  svg.style.height = '0';
+  svg.innerHTML = `<defs>
+    <filter id="gg-night-red" color-interpolation-filters="sRGB">
+      <feColorMatrix type="matrix" values="0.299 0.587 0.114 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0"/>
+    </filter>
+    <filter id="gg-night-green" color-interpolation-filters="sRGB">
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0.299 0.587 0.114 0 0 0 0 0 0 0 0 0 0 1 0"/>
+    </filter>
+  </defs>`;
+  document.body.appendChild(svg);
+}
 
 /**
  * Return the currently active filter state.
@@ -39,9 +60,10 @@ function resetAll(overlay, iframe) {
 
 /**
  * Compute style config for a given mode and intensity.
- * @param {'simpleDim'|'darkInvert'} mode
+ * All visual effects live on iframe.style.filter so they survive fullscreen.
+ * @param {'simpleDim'|'darkInvert'|'nightRed'|'nightGreen'} mode
  * @param {number} intensity 0–100
- * @returns {{ overlay: { filter: string, backgroundColor: string, mixBlendMode: string }, iframe: { filter: string } }}
+ * @returns {{ overlay: { filter: string, backgroundColor: string, mixBlendMode: string }, iframe: { filter: string }, uiFilter: string }}
  */
 export function getModeConfig(mode, intensity) {
   const t = clamp(intensity, 0, 100);
@@ -49,34 +71,43 @@ export function getModeConfig(mode, intensity) {
   const config = {
     overlay: { filter: 'none', backgroundColor: 'transparent', mixBlendMode: '' },
     iframe: { filter: '' },
+    uiFilter: 'none',
+    bgColor: null,
   };
 
-  if (t === 0) return config;
+  if (t === 0 && mode !== 'nightRed' && mode !== 'nightGreen') return config;
+
+  const brightness = 1 - (t / 100) * 0.95;
+  const uiBrightness = 1 - (t / 100) * 0.95;
+  const bg = Math.round(10 * uiBrightness);
 
   switch (mode) {
     case 'simpleDim': {
-      const alpha = (t / 100) * 0.95;
-      config.overlay.backgroundColor = `rgba(0, 0, 0, ${alpha})`;
+      config.iframe.filter = `brightness(${brightness})`;
+      config.uiFilter = `brightness(${uiBrightness})`;
+      config.bgColor = `rgb(${bg}, ${bg}, ${bg})`;
       break;
     }
 
     case 'darkInvert': {
       const amount = t / 100;
       config.iframe.filter = `invert(${amount}) hue-rotate(${180 * amount}deg)`;
+      config.uiFilter = `brightness(${uiBrightness})`;
+      config.bgColor = `rgb(${bg}, ${bg}, ${bg})`;
       break;
     }
 
     case 'nightRed': {
-      const alpha = (t / 100) * 0.9;
-      config.overlay.backgroundColor = `rgba(255, 0, 0, ${alpha})`;
-      config.overlay.mixBlendMode = 'multiply';
+      config.iframe.filter = `url(#gg-night-red) brightness(${brightness})`;
+      config.uiFilter = `url(#gg-night-red) brightness(${uiBrightness})`;
+      config.bgColor = `rgb(${bg}, 0, 0)`;
       break;
     }
 
     case 'nightGreen': {
-      const alpha = (t / 100) * 0.9;
-      config.overlay.backgroundColor = `rgba(0, 255, 0, ${alpha})`;
-      config.overlay.mixBlendMode = 'multiply';
+      config.iframe.filter = `url(#gg-night-green) brightness(${brightness})`;
+      config.uiFilter = `url(#gg-night-green) brightness(${uiBrightness})`;
+      config.bgColor = `rgb(0, ${bg}, 0)`;
       break;
     }
 
@@ -100,6 +131,7 @@ export function applyFilter(mode, intensity) {
 
   resetAll(overlay, iframe);
 
+  if (mode === 'nightRed' || mode === 'nightGreen') ensureSVGFilters();
   const config = getModeConfig(mode, clamped);
 
   if (overlay) {
@@ -111,6 +143,9 @@ export function applyFilter(mode, intensity) {
   if (iframe) {
     iframe.style.filter = config.iframe.filter;
   }
+
+  document.documentElement.style.setProperty('--ui-filter', config.uiFilter);
+  document.body.style.background = config.bgColor || '';
 }
 
 /**
@@ -122,4 +157,6 @@ export function removeFilter() {
   const overlay = document.getElementById(OVERLAY_ID);
   const iframe = getPlayerIframe();
   resetAll(overlay, iframe);
+  document.documentElement.style.setProperty('--ui-filter', 'none');
+  document.body.style.background = '';
 }

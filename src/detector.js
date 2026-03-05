@@ -40,6 +40,7 @@ export function initDetector({ onFilterRecommend, onError, onStatusChange, thres
   // EMA state
   let smoothLuminance = -1;
   let lastRecommendation = null;
+  let forceNextRecommendation = false;
 
   function cleanup() {
     if (rafId) {
@@ -60,6 +61,7 @@ export function initDetector({ onFilterRecommend, onError, onStatusChange, thres
     active = false;
     smoothLuminance = -1;
     lastRecommendation = null;
+    forceNextRecommendation = false;
     lastFrameTime = -1;
     cooldown = 0;
   }
@@ -247,7 +249,8 @@ export function initDetector({ onFilterRecommend, onError, onStatusChange, thres
       rec.mode === lastRecommendation.mode &&
       Math.abs(rec.intensity - lastRecommendation.intensity) > 5;
 
-    if (modeChanged || intensityChanged) {
+    if (modeChanged || intensityChanged || forceNextRecommendation) {
+      forceNextRecommendation = false;
       // Rate-limit intensity changes to prevent sudden jumps
       if (rec && lastRecommendation && rec.mode === lastRecommendation.mode) {
         const delta = rec.intensity - lastRecommendation.intensity;
@@ -344,7 +347,7 @@ export function initDetector({ onFilterRecommend, onError, onStatusChange, thres
     start,
     stop,
     isActive() { return active; },
-    setThreshold(n) { threshold = n; },
+    setThreshold(n) { threshold = n; forceNextRecommendation = true; cooldown = 0; },
     destroy() {
       destroyed = true;
       cleanup();

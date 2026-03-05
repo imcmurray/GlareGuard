@@ -47,7 +47,7 @@ export function initSettings(container) {
       ${isDetectorSupported() ? `
       <div class="settings-group" id="auto-detect-group">
         <div class="toggle-wrap">
-          <label for="auto-detect-toggle">Auto Detect Brightness <span class="auto-detect-status" id="auto-detect-status"></span></label>
+          <label for="auto-detect-toggle">Auto Detect Brightness <span class="experimental-badge">Experimental</span> <span class="auto-detect-status" id="auto-detect-status"></span></label>
           <label class="toggle">
             <input type="checkbox" id="auto-detect-toggle" ${settings.autoDetect ? 'checked' : ''}>
             <span class="toggle-track"></span>
@@ -74,14 +74,11 @@ export function initSettings(container) {
     detector = initDetector({
       threshold: darknessToThreshold(settings.intensity),
       onFilterRecommend(rec) {
-        // Detector controls the filter directly; settings.intensity stays
-        // as the user's target (the slider is not moved).
-        if (rec) {
-          applyFilter(rec.mode, rec.intensity);
-        } else {
-          // Content is already below target — no dimming needed
-          applyFilter(settings.mode, 0);
-        }
+        // Detector controls intensity; always respect the user's chosen mode.
+        // Slider value acts as a minimum floor — auto-detect can push higher
+        // for bright content but never dims less than the user requested.
+        const intensity = Math.max(rec ? rec.intensity : 0, settings.intensity);
+        applyFilter(settings.mode, intensity);
       },
       onError() {
         if (autoDetectToggle) autoDetectToggle.checked = false;
