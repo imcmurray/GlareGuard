@@ -73,6 +73,7 @@ export function getModeConfig(mode, intensity) {
     iframe: { filter: '' },
     uiFilter: 'none',
     bgColor: null,
+    sliderGlow: null,
   };
 
   if (t === 0 && mode !== 'nightRed' && mode !== 'nightGreen') return config;
@@ -80,6 +81,16 @@ export function getModeConfig(mode, intensity) {
   const brightness = 1 - (t / 100) * 0.95;
   const uiBrightness = 1 - (t / 100) * 0.95;
   const bg = Math.round(10 * uiBrightness);
+
+  // Slider thumb: mode-matched color and glow, grows larger to stay visible through UI dimming
+  const glowColor = mode === 'nightRed' ? '255, 80, 80'
+    : mode === 'nightGreen' ? '80, 255, 80'
+    : '74, 144, 217';
+  config.sliderColor = `rgb(${glowColor})`;
+  const blur = Math.round(6 + (t / 100) * 24);
+  const spread = Math.round(2 + (t / 100) * 12);
+  config.sliderGlow = `0 0 ${blur}px ${spread}px rgba(${glowColor}, 1)`;
+  config.pulseBoost = 1 + (t / 100) * 2;
 
   switch (mode) {
     case 'simpleDim': {
@@ -144,7 +155,11 @@ export function applyFilter(mode, intensity) {
     iframe.style.filter = config.iframe.filter;
   }
 
-  document.documentElement.style.setProperty('--ui-filter', config.uiFilter);
+  const root = document.documentElement;
+  root.style.setProperty('--ui-filter', config.uiFilter);
+  root.style.setProperty('--slider-glow', config.sliderGlow || '0 0 6px 2px rgba(74, 144, 217, 0.5)');
+  root.style.setProperty('--slider-color', config.sliderColor || 'var(--accent)');
+  root.style.setProperty('--pulse-boost', config.pulseBoost || 1);
   document.body.style.background = config.bgColor || '';
 }
 
@@ -157,6 +172,10 @@ export function removeFilter() {
   const overlay = document.getElementById(OVERLAY_ID);
   const iframe = getPlayerIframe();
   resetAll(overlay, iframe);
-  document.documentElement.style.setProperty('--ui-filter', 'none');
+  const root = document.documentElement;
+  root.style.setProperty('--ui-filter', 'none');
+  root.style.setProperty('--slider-glow', '0 0 6px 2px rgba(74, 144, 217, 0.5)');
+  root.style.setProperty('--slider-color', 'var(--accent)');
+  root.style.setProperty('--pulse-boost', 1);
   document.body.style.background = '';
 }
