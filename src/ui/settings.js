@@ -64,47 +64,26 @@ export function initSettings(container) {
   const autoDetectStatus = container.querySelector('#auto-detect-status');
 
   // Auto-detect state
-  let savedBeforeDetect = null; // { mode, intensity } saved when auto-detect activates
   let detector = null;
 
   if (isDetectorSupported()) {
     detector = initDetector({
       threshold: darknessToThreshold(settings.intensity),
       onFilterRecommend(rec) {
+        // Detector controls the filter directly; settings.intensity stays
+        // as the user's target (the slider is not moved).
         if (rec) {
-          // Save original settings before first auto-adjustment
-          if (!savedBeforeDetect) {
-            savedBeforeDetect = { mode: settings.mode, intensity: settings.intensity };
-          }
-          settings.mode = rec.mode;
-          settings.intensity = rec.intensity;
-          updateSliderUI();
-          modeButtons.forEach(b => b.classList.toggle('active', b.dataset.mode === settings.mode));
-          updateModeHint();
-          applyFilter(settings.mode, settings.intensity);
-          // Only save on mode changes, not every intensity tweak
-          if (!savedBeforeDetect || savedBeforeDetect.mode !== rec.mode) {
-            saveSettings(settings);
-          }
+          applyFilter(rec.mode, rec.intensity);
         } else {
-          // No filter needed — restore original settings
-          if (savedBeforeDetect) {
-            settings.mode = savedBeforeDetect.mode;
-            settings.intensity = savedBeforeDetect.intensity;
-            savedBeforeDetect = null;
-          }
-          updateSliderUI();
-          modeButtons.forEach(b => b.classList.toggle('active', b.dataset.mode === settings.mode));
-          updateModeHint();
-          applyFilter(settings.mode, settings.intensity);
-          saveSettings(settings);
+          // Content is already below target — no dimming needed
+          applyFilter(settings.mode, 0);
         }
       },
       onError() {
         if (autoDetectToggle) autoDetectToggle.checked = false;
         settings.autoDetect = false;
-        savedBeforeDetect = null;
         saveSettings(settings);
+        applyFilter(settings.mode, settings.intensity);
         setAutoDetectStatus('error');
       },
       onStatusChange(status) {
@@ -140,7 +119,6 @@ export function initSettings(container) {
     detector.stop();
     settings.autoDetect = false;
     if (autoDetectToggle) autoDetectToggle.checked = false;
-    savedBeforeDetect = null;
     saveSettings(settings);
   }
 
@@ -191,16 +169,8 @@ export function initSettings(container) {
       detector.start();
     } else if (detector) {
       detector.stop();
-      // Restore previous mode if we were in auto-detected darkInvert
-      if (savedBeforeDetect) {
-        settings.mode = savedBeforeDetect.mode;
-        settings.intensity = savedBeforeDetect.intensity;
-        savedBeforeDetect = null;
-        updateSliderUI();
-        modeButtons.forEach(b => b.classList.toggle('active', b.dataset.mode === settings.mode));
-        updateModeHint();
-        emitChange();
-      }
+      // Restore user's filter settings
+      emitChange();
     }
   }
 
