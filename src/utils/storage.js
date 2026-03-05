@@ -1,6 +1,6 @@
 const STORAGE_KEY = 'glareguard-settings';
 
-const VALID_MODES = ['simpleDim', 'darkInvert'];
+const VALID_MODES = ['simpleDim', 'darkInvert', 'nightRed', 'nightGreen'];
 
 const DEFAULTS = { intensity: 50, mode: 'simpleDim', autoDetect: false };
 

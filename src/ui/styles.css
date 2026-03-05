@@ -75,6 +75,14 @@ main {
 .site-header {
   text-align: center;
   padding: 2rem 1rem 1rem;
+  opacity: 0.3;
+  transition: opacity 0.6s ease;
+}
+
+.site-header:hover,
+.site-header:focus-within {
+  opacity: 1;
+  transition: opacity 0.15s ease;
 }
 
 .logo {
@@ -95,6 +103,14 @@ main {
   display: flex;
   justify-content: center;
   padding: 2rem 1rem;
+  opacity: 0.3;
+  transition: opacity 0.6s ease;
+}
+
+.hero:hover,
+.hero:focus-within {
+  opacity: 1;
+  transition: opacity 0.15s ease;
 }
 
 .url-form {
@@ -191,6 +207,14 @@ main {
 .settings-container {
   width: 100%;
   max-width: 600px;
+  opacity: 0.3;
+  transition: opacity 0.6s ease;
+}
+
+.settings-container:hover,
+.settings-container:focus-within {
+  opacity: 1;
+  transition: opacity 0.15s ease;
 }
 
 .settings-panel {

@@ -55,7 +55,7 @@ export function getModeConfig(mode, intensity) {
 
   switch (mode) {
     case 'simpleDim': {
-      const alpha = (t / 100) * 0.7;
+      const alpha = (t / 100) * 0.95;
       config.overlay.backgroundColor = `rgba(0, 0, 0, ${alpha})`;
       break;
     }
@@ -63,6 +63,20 @@ export function getModeConfig(mode, intensity) {
     case 'darkInvert': {
       const amount = t / 100;
       config.iframe.filter = `invert(${amount}) hue-rotate(${180 * amount}deg)`;
+      break;
+    }
+
+    case 'nightRed': {
+      const alpha = (t / 100) * 0.9;
+      config.overlay.backgroundColor = `rgba(255, 0, 0, ${alpha})`;
+      config.overlay.mixBlendMode = 'multiply';
+      break;
+    }
+
+    case 'nightGreen': {
+      const alpha = (t / 100) * 0.9;
+      config.overlay.backgroundColor = `rgba(0, 255, 0, ${alpha})`;
+      config.overlay.mixBlendMode = 'multiply';
       break;
     }
 

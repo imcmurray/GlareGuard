@@ -182,9 +182,9 @@ export function initDetector({ onFilterRecommend, onError, onStatusChange, thres
   function computeRecommendation(smoothL, target) {
     if (smoothL <= target) return null;
 
-    // Try Simple Dim first: perceived ≈ L × (1 - 0.7 × t/100)
-    const dimIntensity = Math.min(100, Math.round((1 - target / smoothL) / 0.7 * 100));
-    const dimPerceived = smoothL * (1 - 0.7 * dimIntensity / 100);
+    // Try Simple Dim first: perceived ≈ L × (1 - 0.95 × t/100)
+    const dimIntensity = Math.min(100, Math.round((1 - target / smoothL) / 0.95 * 100));
+    const dimPerceived = smoothL * (1 - 0.95 * dimIntensity / 100);
 
     if (dimIntensity <= 100 && Math.abs(dimPerceived - target) < 3) {
       return { mode: 'simpleDim', intensity: dimIntensity };

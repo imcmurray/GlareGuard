@@ -2,7 +2,7 @@ import { applyFilter } from '../processor.js';
 import { saveSettings, loadSettings } from '../utils/storage.js';
 import { initDetector, isDetectorSupported } from '../detector.js';
 
-const VALID_MODES = ['simpleDim', 'darkInvert'];
+const VALID_MODES = ['simpleDim', 'darkInvert', 'nightRed', 'nightGreen'];
 const DEFAULTS = { intensity: 50, mode: 'simpleDim', autoDetect: false };
 
 /** Map Darkness slider (0–100%) to luminance threshold (200–10). */
@@ -13,6 +13,8 @@ function darknessToThreshold(intensity) {
 const MODE_HINTS = {
   simpleDim: 'Uniform darkening — good for general viewing.',
   darkInvert: 'Inverts colors — turns white backgrounds dark.',
+  nightRed: 'Red tint — preserves night vision in the dark.',
+  nightGreen: 'Green tint — preserves night vision in the dark.',
 };
 
 /**
@@ -36,6 +38,8 @@ export function initSettings(container) {
         <div class="mode-selector">
           <button type="button" class="mode-btn${settings.mode === 'simpleDim' ? ' active' : ''}" data-mode="simpleDim">Simple Dim</button>
           <button type="button" class="mode-btn${settings.mode === 'darkInvert' ? ' active' : ''}" data-mode="darkInvert">Dark Invert</button>
+          <button type="button" class="mode-btn${settings.mode === 'nightRed' ? ' active' : ''}" data-mode="nightRed">Night Red</button>
+          <button type="button" class="mode-btn${settings.mode === 'nightGreen' ? ' active' : ''}" data-mode="nightGreen">Night Green</button>
         </div>
         <p class="mode-hint" id="mode-hint">${MODE_HINTS[settings.mode]}</p>
       </div>
