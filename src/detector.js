@@ -238,7 +238,7 @@ export function initDetector({ onFilterRecommend, onError, onStatusChange, thres
     onStatusChange('active:' + Math.round(smoothLuminance));
 
     // Compute optimal filter recommendation
-    const rec = computeRecommendation(smoothLuminance, threshold);
+    let rec = computeRecommendation(smoothLuminance, threshold);
 
     // Check if recommendation changed materially
     const modeChanged = (rec === null) !== (lastRecommendation === null) ||
